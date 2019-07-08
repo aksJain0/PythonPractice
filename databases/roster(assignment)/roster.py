@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import os
 
 conn = sqlite3.connect('rosterdb.sqlite')
 cur = conn.cursor()
@@ -28,9 +29,12 @@ CREATE TABLE Member (
 )
 ''')
 
+cmd = 'dir'
+print(os.system(cmd))
+
 fname = input('Enter file name: ')
 if len(fname) < 1:
-    fname = 'roster_data_sample.json'
+    fname = 'roster_data.json'
 
 # [
 #   [ "Charley", "si110", 1 ],
@@ -43,8 +47,9 @@ for entry in json_data:
 
     name = entry[0];
     title = entry[1];
+    role = entry[2]
 
-    print((name, title))
+    print((name, title, role))
 
     cur.execute('''INSERT OR IGNORE INTO User (name)
         VALUES ( ? )''', ( name, ) )
@@ -57,7 +62,13 @@ for entry in json_data:
     course_id = cur.fetchone()[0]
 
     cur.execute('''INSERT OR REPLACE INTO Member
-        (user_id, course_id) VALUES ( ?, ? )''',
-        ( user_id, course_id ) )
+        (user_id, course_id, role) VALUES ( ?, ?, ? )''',
+        ( user_id, course_id, role ) )
 
-    conn.commit()
+conn.commit()
+
+cur.execute('''SELECT hex(User.name || Course.title || Member.role ) AS X FROM 
+    User JOIN Member JOIN Course 
+    ON User.id = Member.user_id AND Member.course_id = Course.id
+    ORDER BY X''')
+print(cur.fetchone()[0])
